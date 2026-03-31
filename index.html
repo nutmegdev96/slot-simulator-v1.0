@@ -3,12 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>NEO SLOT | Premium Crypto Slot Experience</title>
+    <title>NEO SLOT | Premium Slot Experience</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* Quick fixes for display issues */
+        .reel-strip {
+            overflow: hidden;
+            position: relative;
+            background: #0a0c12;
+            border-radius: 16px;
+        }
+        .reel-window {
+            height: 180px;
+            overflow: hidden;
+            position: relative;
+        }
+        .symbols-container {
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.1s linear;
+            will-change: transform;
+        }
+        .symbol {
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            flex-shrink: 0;
+        }
+        .reel-spinning .symbols-container {
+            animation: spinReel 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards !important;
+        }
+        @keyframes spinReel {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-900px); }
+        }
+        .win-display {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        .win-display.show {
+            opacity: 1;
+            animation: winPop 0.5s ease-out;
+        }
+        @keyframes winPop {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .toast {
+            background: #1a1d2a;
+            border-left: 4px solid #ff3b6f;
+            padding: 12px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            animation: slideUp 0.3s ease-out;
+            font-size: 14px;
+            font-weight: 500;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .toast.win { border-left-color: #00e5a0; color: #00e5a0; }
+        .toast.achievement { border-left-color: gold; color: gold; }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-200px); opacity: 0; }
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+        .spin-btn.loading { opacity: 0.6; pointer-events: none; }
+        .bet-option.active {
+            background: #ff3b6f;
+            border-color: #ff3b6f;
+            box-shadow: 0 0 15px rgba(255,59,111,0.4);
+        }
+    </style>
 </head>
 <body>
     <div class="app">
@@ -48,15 +146,9 @@
                 <div class="reel-strip" id="reel1">
                     <div class="reel-window">
                         <div class="symbols-container">
-                            <div class="symbol">🍒</div>
-                            <div class="symbol">🍊</div>
-                            <div class="symbol">🍋</div>
-                            <div class="symbol">💎</div>
-                            <div class="symbol">7️⃣</div>
-                            <div class="symbol">🍒</div>
-                            <div class="symbol">🍊</div>
-                            <div class="symbol">🍋</div>
-                            <div class="symbol">💎</div>
+                            <div class="symbol">🍒</div><div class="symbol">🍊</div><div class="symbol">🍋</div>
+                            <div class="symbol">💎</div><div class="symbol">7️⃣</div><div class="symbol">🍒</div>
+                            <div class="symbol">🍊</div><div class="symbol">🍋</div><div class="symbol">💎</div>
                             <div class="symbol">7️⃣</div>
                         </div>
                     </div>
@@ -64,15 +156,9 @@
                 <div class="reel-strip" id="reel2">
                     <div class="reel-window">
                         <div class="symbols-container">
-                            <div class="symbol">🍒</div>
-                            <div class="symbol">🍊</div>
-                            <div class="symbol">🍋</div>
-                            <div class="symbol">💎</div>
-                            <div class="symbol">7️⃣</div>
-                            <div class="symbol">🍒</div>
-                            <div class="symbol">🍊</div>
-                            <div class="symbol">🍋</div>
-                            <div class="symbol">💎</div>
+                            <div class="symbol">🍒</div><div class="symbol">🍊</div><div class="symbol">🍋</div>
+                            <div class="symbol">💎</div><div class="symbol">7️⃣</div><div class="symbol">🍒</div>
+                            <div class="symbol">🍊</div><div class="symbol">🍋</div><div class="symbol">💎</div>
                             <div class="symbol">7️⃣</div>
                         </div>
                     </div>
@@ -80,21 +166,14 @@
                 <div class="reel-strip" id="reel3">
                     <div class="reel-window">
                         <div class="symbols-container">
-                            <div class="symbol">🍒</div>
-                            <div class="symbol">🍊</div>
-                            <div class="symbol">🍋</div>
-                            <div class="symbol">💎</div>
-                            <div class="symbol">7️⃣</div>
-                            <div class="symbol">🍒</div>
-                            <div class="symbol">🍊</div>
-                            <div class="symbol">🍋</div>
-                            <div class="symbol">💎</div>
+                            <div class="symbol">🍒</div><div class="symbol">🍊</div><div class="symbol">🍋</div>
+                            <div class="symbol">💎</div><div class="symbol">7️⃣</div><div class="symbol">🍒</div>
+                            <div class="symbol">🍊</div><div class="symbol">🍋</div><div class="symbol">💎</div>
                             <div class="symbol">7️⃣</div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="slot-overlay"></div>
         </div>
 
         <!-- Win Display -->
@@ -124,21 +203,14 @@
             </div>
             <input type="range" id="rtpSlider" min="70" max="98" value="96" step="1">
             <div class="rtp-labels">
-                <span>HARD</span>
-                <span>NORMAL</span>
-                <span>EASY</span>
+                <span>HARD</span><span>NORMAL</span><span>EASY</span>
             </div>
         </div>
 
         <!-- Action Buttons -->
         <div class="action-buttons">
-            <button id="spinBtn" class="spin-btn">
-                <span class="spin-text">SPIN</span>
-                <span class="spin-icon">🎲</span>
-            </button>
-            <button id="resetBtn" class="reset-btn">
-                <span>RESET</span>
-            </button>
+            <button id="spinBtn" class="spin-btn"><span class="spin-text">SPIN</span><span class="spin-icon">🎲</span></button>
+            <button id="resetBtn" class="reset-btn"><span>RESET</span></button>
         </div>
 
         <!-- Tabs -->
@@ -151,98 +223,40 @@
         <!-- Tab Content: Statistics -->
         <div class="tab-content active" id="stats-tab">
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">🎰</div>
-                    <div class="stat-info">
-                        <span class="stat-label">Total Spins</span>
-                        <span class="stat-number" id="totalSpins">0</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🏆</div>
-                    <div class="stat-info">
-                        <span class="stat-label">Win Rate</span>
-                        <span class="stat-number" id="winRate">0%</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🔥</div>
-                    <div class="stat-info">
-                        <span class="stat-label">Best Streak</span>
-                        <span class="stat-number" id="bestStreak">0</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">💎</div>
-                    <div class="stat-info">
-                        <span class="stat-label">Max Win</span>
-                        <span class="stat-number" id="maxWin">0</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📉</div>
-                    <div class="stat-info">
-                        <span class="stat-label">Total Losses</span>
-                        <span class="stat-number" id="totalLosses">0</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🎯</div>
-                    <div class="stat-info">
-                        <span class="stat-label">Current RTP</span>
-                        <span class="stat-number" id="currentRTP">0%</span>
-                    </div>
-                </div>
+                <div class="stat-card"><div class="stat-icon">🎰</div><div class="stat-info"><span class="stat-label">Total Spins</span><span class="stat-number" id="totalSpins">0</span></div></div>
+                <div class="stat-card"><div class="stat-icon">🏆</div><div class="stat-info"><span class="stat-label">Win Rate</span><span class="stat-number" id="winRate">0%</span></div></div>
+                <div class="stat-card"><div class="stat-icon">🔥</div><div class="stat-info"><span class="stat-label">Best Streak</span><span class="stat-number" id="bestStreak">0</span></div></div>
+                <div class="stat-card"><div class="stat-icon">💎</div><div class="stat-info"><span class="stat-label">Max Win</span><span class="stat-number" id="maxWin">0</span></div></div>
+                <div class="stat-card"><div class="stat-icon">📉</div><div class="stat-info"><span class="stat-label">Total Losses</span><span class="stat-number" id="totalLosses">0</span></div></div>
+                <div class="stat-card"><div class="stat-icon">🎯</div><div class="stat-info"><span class="stat-label">Current RTP</span><span class="stat-number" id="currentRTP">0%</span></div></div>
             </div>
         </div>
 
         <!-- Tab Content: Achievements -->
         <div class="tab-content" id="achievements-tab">
             <div class="achievements-grid" id="achievementsGrid">
-                <div class="achievement-card locked" data-achievement="firstWin">
-                    <div class="achievement-icon">🎯</div>
-                    <div class="achievement-name">First Blood</div>
-                    <div class="achievement-desc">Win your first game</div>
-                </div>
-                <div class="achievement-card locked" data-achievement="jackpot">
-                    <div class="achievement-icon">💎</div>
-                    <div class="achievement-name">Jackpot Hunter</div>
-                    <div class="achievement-desc">Win 50x your bet</div>
-                </div>
-                <div class="achievement-card locked" data-achievement="highRoller">
-                    <div class="achievement-icon">🎲</div>
-                    <div class="achievement-name">High Roller</div>
-                    <div class="achievement-desc">Bet 250 credits</div>
-                </div>
-                <div class="achievement-card locked" data-achievement="luckyStreak">
-                    <div class="achievement-icon">🔥</div>
-                    <div class="achievement-name">On Fire!</div>
-                    <div class="achievement-desc">3 wins in a row</div>
-                </div>
-                <div class="achievement-card locked" data-achievement="grinder">
-                    <div class="achievement-icon">⚙️</div>
-                    <div class="achievement-name">The Grinder</div>
-                    <div class="achievement-desc">100 total spins</div>
-                </div>
-                <div class="achievement-card locked" data-achievement="millionaire">
-                    <div class="achievement-icon">💰</div>
-                    <div class="achievement-name">Millionaire</div>
-                    <div class="achievement-desc">Reach 5000 credits</div>
-                </div>
+                <div class="achievement-card locked" data-achievement="firstWin"><div class="achievement-icon">🎯</div><div class="achievement-name">First Blood</div><div class="achievement-desc">Win your first game</div></div>
+                <div class="achievement-card locked" data-achievement="jackpot"><div class="achievement-icon">💎</div><div class="achievement-name">Jackpot Hunter</div><div class="achievement-desc">Win 50x your bet</div></div>
+                <div class="achievement-card locked" data-achievement="highRoller"><div class="achievement-icon">🎲</div><div class="achievement-name">High Roller</div><div class="achievement-desc">Bet 250 credits</div></div>
+                <div class="achievement-card locked" data-achievement="luckyStreak"><div class="achievement-icon">🔥</div><div class="achievement-name">On Fire!</div><div class="achievement-desc">3 wins in a row</div></div>
+                <div class="achievement-card locked" data-achievement="grinder"><div class="achievement-icon">⚙️</div><div class="achievement-name">The Grinder</div><div class="achievement-desc">100 total spins</div></div>
+                <div class="achievement-card locked" data-achievement="millionaire"><div class="achievement-icon">💰</div><div class="achievement-name">Millionaire</div><div class="achievement-desc">Reach 5000 credits</div></div>
             </div>
         </div>
 
         <!-- Tab Content: Chart -->
         <div class="tab-content" id="chart-tab">
-            <div class="chart-container">
-                <canvas id="bankrollChart"></canvas>
-            </div>
+            <div class="chart-container"><canvas id="bankrollChart"></canvas></div>
         </div>
 
-        <!-- Toast Notifications -->
+        <!-- Toast Container -->
         <div class="toast-container" id="toastContainer"></div>
     </div>
 
+    <script>
+        // Full game script - paste the complete JavaScript from previous message here
+        // Make sure to include the entire NeoSlot class and initialization
+    </script>
     <script src="script.js"></script>
 </body>
 </html>
