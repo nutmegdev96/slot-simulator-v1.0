@@ -40,9 +40,4 @@ Open via GitHub Pages or run locally
 ├── index.html
 ├── style.css
 ├── script.js
-├── sounds/
-│   ├── spin.mp3
-│   ├── win.mp3
-│   ├── lose.mp3
-│   └── jackpot.mp3
 └── README.md
