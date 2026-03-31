@@ -27,21 +27,28 @@ class NeoSlot {
     }
     
     init() {
+        console.log('NeoSlot initialized');
         this.attachEvents();
         this.initChart();
         this.updateUI();
         this.updateStats();
         this.loadSounds();
         // Set initial reel positions
-        [1,2,3].forEach(i => this.updateReelSymbol(i, '🍒'));
+        [1, 2, 3].forEach(i => this.updateReelSymbol(i, '🍒'));
     }
     
     attachEvents() {
-        document.getElementById('spinBtn').addEventListener('click', () => this.spin());
-        document.getElementById('resetBtn').addEventListener('click', () => this.reset());
-        document.getElementById('soundToggle').addEventListener('click', () => this.toggleSound());
-        document.getElementById('themeToggle').addEventListener('click', () => this.toggleTheme());
-        document.getElementById('rtpSlider').addEventListener('input', (e) => this.updateRTP(e.target.value));
+        const spinBtn = document.getElementById('spinBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const soundToggle = document.getElementById('soundToggle');
+        const themeToggle = document.getElementById('themeToggle');
+        const rtpSlider = document.getElementById('rtpSlider');
+        
+        if (spinBtn) spinBtn.addEventListener('click', () => this.spin());
+        if (resetBtn) resetBtn.addEventListener('click', () => this.reset());
+        if (soundToggle) soundToggle.addEventListener('click', () => this.toggleSound());
+        if (themeToggle) themeToggle.addEventListener('click', () => this.toggleTheme());
+        if (rtpSlider) rtpSlider.addEventListener('input', (e) => this.updateRTP(e.target.value));
         
         document.querySelectorAll('.bet-option').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -61,14 +68,18 @@ class NeoSlot {
     
     switchTab(tab) {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
+        const activeBtn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+        if (activeBtn) activeBtn.classList.add('active');
+        
         document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-        document.getElementById(`${tab}-tab`).classList.add('active');
+        const activeContent = document.getElementById(`${tab}-tab`);
+        if (activeContent) activeContent.classList.add('active');
     }
     
     updateRTP(value) {
         this.rtp = parseInt(value);
-        document.getElementById('rtpValue').textContent = `${this.rtp}%`;
+        const rtpValue = document.getElementById('rtpValue');
+        if (rtpValue) rtpValue.textContent = `${this.rtp}%`;
     }
     
     getRandomResult() {
@@ -108,11 +119,13 @@ class NeoSlot {
         this.balance -= this.betAmount;
         this.updateUI();
         
-        const reels = [1,2,3].map(i => document.getElementById(`reel${i}`));
-        reels.forEach(reel => reel.classList.add('reel-spinning'));
+        const reels = [1, 2, 3].map(i => document.getElementById(`reel${i}`));
+        reels.forEach(reel => {
+            if (reel) reel.classList.add('reel-spinning');
+        });
         
         const spinBtn = document.getElementById('spinBtn');
-        spinBtn.classList.add('loading');
+        if (spinBtn) spinBtn.classList.add('loading');
         this.playSound('spin');
         
         await this.delay(800);
@@ -122,8 +135,10 @@ class NeoSlot {
         
         for (let i = 0; i < reels.length; i++) {
             await this.delay(120);
-            reels[i].classList.remove('reel-spinning');
-            this.updateReelSymbol(i + 1, result[i]);
+            if (reels[i]) {
+                reels[i].classList.remove('reel-spinning');
+                this.updateReelSymbol(i + 1, result[i]);
+            }
         }
         
         if (win > 0) {
@@ -165,21 +180,26 @@ class NeoSlot {
         
         if (this.balance <= 0) {
             this.showToast('GAME OVER! Press RESET', 'loss');
-            document.getElementById('spinBtn').disabled = true;
+            const spinBtnDisable = document.getElementById('spinBtn');
+            if (spinBtnDisable) spinBtnDisable.disabled = true;
         }
         
         this.isSpinning = false;
-        spinBtn.classList.remove('loading');
+        if (spinBtn) spinBtn.classList.remove('loading');
     }
     
     updateReelSymbol(reelNum, symbol) {
         const reel = document.getElementById(`reel${reelNum}`);
+        if (!reel) return;
         const container = reel.querySelector('.symbols-container');
+        if (!container) return;
         const symbols = container.querySelectorAll('.symbol');
-        // Find index of symbol in our symbols array or use default
-        let targetIndex = 2; // center position
-        for(let i = 0; i < symbols.length; i++) {
-            if(symbols[i].textContent === symbol) {
+        if (!symbols.length) return;
+        
+        // Find the symbol or use center position
+        let targetIndex = 2;
+        for (let i = 0; i < symbols.length; i++) {
+            if (symbols[i].textContent === symbol) {
                 targetIndex = i;
                 break;
             }
@@ -189,18 +209,28 @@ class NeoSlot {
     
     showWinEffect(win) {
         const winDisplay = document.getElementById('winDisplay');
-        winDisplay.querySelector('.win-amount').textContent = `+${win}`;
-        winDisplay.classList.add('show');
+        if (winDisplay) {
+            const winAmount = winDisplay.querySelector('.win-amount');
+            if (winAmount) winAmount.textContent = `+${win}`;
+            winDisplay.classList.add('show');
+        }
         for (let i = 0; i < 20; i++) this.createFloatingNumber(win);
-        setTimeout(() => winDisplay.classList.remove('show'), 1500);
+        setTimeout(() => {
+            if (winDisplay) winDisplay.classList.remove('show');
+        }, 1500);
     }
     
     showJackpotEffect() {
         const winDisplay = document.getElementById('winDisplay');
-        winDisplay.querySelector('.win-amount').textContent = 'JACKPOT!';
-        winDisplay.classList.add('show');
+        if (winDisplay) {
+            const winAmount = winDisplay.querySelector('.win-amount');
+            if (winAmount) winAmount.textContent = 'JACKPOT!';
+            winDisplay.classList.add('show');
+        }
         for (let i = 0; i < 60; i++) this.createConfetti();
-        setTimeout(() => winDisplay.classList.remove('show'), 2000);
+        setTimeout(() => {
+            if (winDisplay) winDisplay.classList.remove('show');
+        }, 2000);
     }
     
     createFloatingNumber(win) {
@@ -235,6 +265,7 @@ class NeoSlot {
     
     showToast(message, type) {
         const container = document.getElementById('toastContainer');
+        if (!container) return;
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         toast.textContent = message;
@@ -258,15 +289,40 @@ class NeoSlot {
     }
     
     initChart() {
-        const ctx = document.getElementById('bankrollChart').getContext('2d');
+        const canvas = document.getElementById('bankrollChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
         this.chart = new Chart(ctx, {
             type: 'line',
-            data: { labels: ['0'], datasets: [{ label: 'Bankroll', data: [1000], borderColor: '#ff3b6f', backgroundColor: 'rgba(255, 59, 111, 0.1)', borderWidth: 3, fill: true, tension: 0.4, pointRadius: 0 }] },
-            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#8b92a8' } } }, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b92a8' } }, x: { ticks: { color: '#8b92a8' } } } }
+            data: { 
+                labels: ['0'], 
+                datasets: [{ 
+                    label: 'Bankroll', 
+                    data: [1000], 
+                    borderColor: '#ff3b6f', 
+                    backgroundColor: 'rgba(255, 59, 111, 0.1)', 
+                    borderWidth: 3, 
+                    fill: true, 
+                    tension: 0.4, 
+                    pointRadius: 0 
+                }] 
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: true, 
+                plugins: { 
+                    legend: { labels: { color: '#8b92a8' } } 
+                }, 
+                scales: { 
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b92a8' } }, 
+                    x: { ticks: { color: '#8b92a8' } } 
+                } 
+            }
         });
     }
     
     updateChart() {
+        if (!this.chart) return;
         const labels = Array.from({ length: this.balanceHistory.length }, (_, i) => i);
         this.chart.data.labels = labels;
         this.chart.data.datasets[0].data = this.balanceHistory;
@@ -275,19 +331,33 @@ class NeoSlot {
     
     updateStats() {
         const winRate = this.totalSpins > 0 ? ((this.totalWins / this.totalSpins) * 100).toFixed(1) : 0;
-        const currentRTP = this.totalSpins > 0 ? ((this.balanceHistory[this.balanceHistory.length-1] - 1000 + (this.totalSpins * this.betAmount)) / (this.totalSpins * this.betAmount) * 100).toFixed(1) : 0;
-        document.getElementById('totalSpins').textContent = this.totalSpins;
-        document.getElementById('winRate').textContent = `${winRate}%`;
-        document.getElementById('bestStreak').textContent = this.bestStreak;
-        document.getElementById('maxWin').textContent = this.maxWin;
-        document.getElementById('totalLosses').textContent = this.totalLosses;
-        document.getElementById('currentRTP').textContent = `${currentRTP}%`;
+        const currentRTP = this.totalSpins > 0 ? 
+            ((this.balanceHistory[this.balanceHistory.length-1] - 1000 + (this.totalSpins * this.betAmount)) / (this.totalSpins * this.betAmount) * 100).toFixed(1) : 0;
+        
+        const totalSpinsEl = document.getElementById('totalSpins');
+        const winRateEl = document.getElementById('winRate');
+        const bestStreakEl = document.getElementById('bestStreak');
+        const maxWinEl = document.getElementById('maxWin');
+        const totalLossesEl = document.getElementById('totalLosses');
+        const currentRTPEl = document.getElementById('currentRTP');
+        
+        if (totalSpinsEl) totalSpinsEl.textContent = this.totalSpins;
+        if (winRateEl) winRateEl.textContent = `${winRate}%`;
+        if (bestStreakEl) bestStreakEl.textContent = this.bestStreak;
+        if (maxWinEl) maxWinEl.textContent = this.maxWin;
+        if (totalLossesEl) totalLossesEl.textContent = this.totalLosses;
+        if (currentRTPEl) currentRTPEl.textContent = `${currentRTP}%`;
     }
     
     updateUI() {
-        document.getElementById('balance').textContent = Math.floor(this.balance).toLocaleString();
-        if (this.balance <= 0) document.getElementById('spinBtn').disabled = true;
-        else document.getElementById('spinBtn').disabled = false;
+        const balanceEl = document.getElementById('balance');
+        if (balanceEl) balanceEl.textContent = Math.floor(this.balance).toLocaleString();
+        
+        const spinBtn = document.getElementById('spinBtn');
+        if (spinBtn) {
+            if (this.balance <= 0) spinBtn.disabled = true;
+            else spinBtn.disabled = false;
+        }
     }
     
     reset() {
@@ -300,12 +370,20 @@ class NeoSlot {
         this.maxWin = 0;
         this.balanceHistory = [1000];
         this.achievements.clear();
+        
         this.updateUI();
         this.updateChart();
         this.updateStats();
-        document.getElementById('spinBtn').disabled = false;
-        document.querySelectorAll('.achievement-card').forEach(ach => { ach.classList.add('locked'); ach.classList.remove('unlocked'); });
-        [1,2,3].forEach(i => this.updateReelSymbol(i, '🍒'));
+        
+        const spinBtn = document.getElementById('spinBtn');
+        if (spinBtn) spinBtn.disabled = false;
+        
+        document.querySelectorAll('.achievement-card').forEach(ach => { 
+            ach.classList.add('locked'); 
+            ach.classList.remove('unlocked'); 
+        });
+        
+        [1, 2, 3].forEach(i => this.updateReelSymbol(i, '🍒'));
         this.showToast('Game reset! Good luck!', 'win');
     }
     
@@ -335,23 +413,35 @@ class NeoSlot {
         };
     }
     
-    playSound(name) { if (this.sounds[name]) this.sounds[name](); }
+    playSound(name) { 
+        if (this.sounds[name]) this.sounds[name](); 
+    }
     
     toggleSound() {
         this.soundEnabled = !this.soundEnabled;
         const btn = document.getElementById('soundToggle');
-        btn.querySelector('.sound-icon').textContent = this.soundEnabled ? '🔊' : '🔇';
+        if (btn) {
+            const soundIcon = btn.querySelector('.sound-icon');
+            if (soundIcon) soundIcon.textContent = this.soundEnabled ? '🔊' : '🔇';
+        }
         this.showToast(this.soundEnabled ? 'Sound ON' : 'Sound OFF', 'info');
     }
     
     toggleTheme() {
         document.body.classList.toggle('dark-theme');
         const btn = document.getElementById('themeToggle');
-        btn.querySelector('.theme-icon').textContent = document.body.classList.contains('dark-theme') ? '☀️' : '🌙';
+        if (btn) {
+            const themeIcon = btn.querySelector('.theme-icon');
+            if (themeIcon) themeIcon.textContent = document.body.classList.contains('dark-theme') ? '☀️' : '🌙';
+        }
     }
     
-    delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+    delay(ms) { 
+        return new Promise(resolve => setTimeout(resolve, ms)); 
+    }
 }
 
-// Start the game
-new NeoSlot();
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, starting NeoSlot...');
+    window.game = new NeoSlot();
+});
