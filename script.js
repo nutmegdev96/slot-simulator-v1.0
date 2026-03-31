@@ -1,8 +1,8 @@
-class NeoSlotSimulator {
+class NeoSlot {
     constructor() {
         this.balance = 1000;
         this.betAmount = 50;
-        this.history = [];
+        this.rtp = 96;
         this.totalSpins = 0;
         this.totalWins = 0;
         this.totalLosses = 0;
@@ -12,7 +12,7 @@ class NeoSlotSimulator {
         this.balanceHistory = [1000];
         this.achievements = new Set();
         this.soundEnabled = true;
-        this.rtp = 96;
+        this.isSpinning = false;
         
         this.symbols = ['🍒', '🍊', '🍋', '💎', '7️⃣'];
         this.paytable = {
@@ -27,71 +27,78 @@ class NeoSlotSimulator {
     }
     
     init() {
-        this.updateUI();
         this.attachEvents();
         this.initChart();
-        this.initParticles();
-        this.loadSoundEffects();
+        this.updateUI();
         this.updateStats();
+        this.loadSounds();
     }
     
     attachEvents() {
         document.getElementById('spinBtn').addEventListener('click', () => this.spin());
         document.getElementById('resetBtn').addEventListener('click', () => this.reset());
-        document.getElementById('darkModeBtn').addEventListener('click', () => this.toggleDarkMode());
         document.getElementById('soundToggle').addEventListener('click', () => this.toggleSound());
+        document.getElementById('themeToggle').addEventListener('click', () => this.toggleTheme());
         document.getElementById('rtpSlider').addEventListener('input', (e) => this.updateRTP(e.target.value));
         
-        document.querySelectorAll('.bet-btn').forEach(btn => {
+        document.querySelectorAll('.bet-option').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.bet-option').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.betAmount = parseInt(btn.dataset.bet);
-                this.updateUI();
+            });
+        });
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tab = btn.dataset.tab;
+                this.switchTab(tab);
             });
         });
     }
     
+    switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
+        
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        document.getElementById(`${tab}-tab`).classList.add('active');
+    }
+    
     updateRTP(value) {
         this.rtp = parseInt(value);
-        document.getElementById('rtpDisplay').textContent = `${this.rtp}%`;
+        document.getElementById('rtpValue').textContent = `${this.rtp}%`;
     }
     
     getRandomResult() {
-        // RTP-based probability
         const rtpFactor = this.rtp / 96;
         const weightedSymbols = [];
         
-        // Adjust probabilities based on RTP
-        const baseProbabilities = {
-            '🍒': 45,
-            '🍊': 36,
-            '🍋': 18,
-            '💎': 9,
-            '7️⃣': 4.5
+        const probabilities = {
+            '🍒': 45 * rtpFactor,
+            '🍊': 36 * rtpFactor,
+            '🍋': 18 * rtpFactor,
+            '💎': 9 * rtpFactor,
+            '7️⃣': 4.5 * rtpFactor
         };
         
-        Object.entries(baseProbabilities).forEach(([symbol, prob]) => {
-            let adjustedProb = prob * rtpFactor;
-            if (symbol === '7️⃣' && this.rtp < 85) adjustedProb *= 0.7;
-            if (symbol === '🍒' && this.rtp > 90) adjustedProb *= 1.2;
-            
-            const count = Math.max(1, Math.floor(adjustedProb));
+        Object.entries(probabilities).forEach(([symbol, prob]) => {
+            const count = Math.max(1, Math.floor(prob));
             for (let i = 0; i < count; i++) {
                 weightedSymbols.push(symbol);
             }
         });
         
-        const getRandomSymbol = () => weightedSymbols[Math.floor(Math.random() * weightedSymbols.length)];
-        return [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()];
+        const getSymbol = () => weightedSymbols[Math.floor(Math.random() * weightedSymbols.length)];
+        return [getSymbol(), getSymbol(), getSymbol()];
     }
     
     calculateWin(result) {
         const [a, b, c] = result;
-        const combination = a + b + c;
+        const combo = a + b + c;
         
-        if (this.paytable[combination]) {
-            return this.betAmount * this.paytable[combination];
+        if (this.paytable[combo]) {
+            return this.betAmount * this.paytable[combo];
         }
         
         if (a === b || b === c || a === c) {
@@ -102,52 +109,64 @@ class NeoSlotSimulator {
     }
     
     async spin() {
+        if (this.isSpinning) return;
         if (this.balance < this.betAmount) {
-            this.showMessage('❌ Crediti insufficienti! Premi RESET', 'error');
+            this.showToast('Insufficient credits! Press RESET', 'loss');
             return;
         }
         
+        this.isSpinning = true;
         this.balance -= this.betAmount;
         this.updateUI();
         
-        // Animation
-        const reels = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
-        reels.forEach(reel => reel.classList.add('spinning'));
+        // Start reel animation
+        const reels = [1, 2, 3].map(i => document.getElementById(`reel${i}`));
+        reels.forEach(reel => reel.classList.add('reel-spinning'));
+        
+        // Add loading state to button
+        const spinBtn = document.getElementById('spinBtn');
+        spinBtn.classList.add('loading');
         
         this.playSound('spin');
-        this.createParticleExplosion();
         
-        // Simulate spin
-        await this.delay(300);
+        // Simulate spin time
+        await this.delay(800);
         
+        // Get result
         const result = this.getRandomResult();
-        this.displayResult(result);
         const win = this.calculateWin(result);
+        
+        // Stop reels one by one
+        for (let i = 0; i < reels.length; i++) {
+            await this.delay(100);
+            reels[i].classList.remove('reel-spinning');
+            this.updateReelSymbol(i + 1, result[i]);
+        }
         
         if (win > 0) {
             this.balance += win;
             this.totalWins++;
             this.currentStreak++;
+            
             if (win >= this.betAmount * 50) {
-                this.playSound('jackpot');
                 this.showJackpotEffect();
+                this.playSound('jackpot');
                 this.unlockAchievement('jackpot');
             } else {
-                this.playSound('win');
                 this.showWinEffect(win);
+                this.playSound('win');
             }
             
             if (win > this.maxWin) {
                 this.maxWin = win;
-                document.getElementById('maxWin').textContent = win;
             }
             
-            this.showMessage(`🎉 VINTO! +${win} crediti (x${win/this.betAmount}) 🎉`, 'win');
+            this.showToast(`WIN! +${win} credits (${win/this.betAmount}x)`, 'win');
         } else {
             this.totalLosses++;
             this.currentStreak = 0;
             this.playSound('lose');
-            this.showMessage(`😢 Perso! -${this.betAmount} crediti`, 'loss');
+            this.showToast(`LOSS! -${this.betAmount} credits`, 'loss');
         }
         
         if (this.currentStreak > this.bestStreak) {
@@ -161,95 +180,117 @@ class NeoSlotSimulator {
         this.updateStats();
         this.updateUI();
         
-        reels.forEach(reel => reel.classList.remove('spinning'));
-        
-        if (this.balance <= 0) {
-            this.showMessage('💀 GAME OVER! Premi RESET', 'error');
-            document.getElementById('spinBtn').disabled = true;
-        }
-        
-        // Check achievements
         if (this.totalSpins >= 100) this.unlockAchievement('grinder');
         if (this.balance >= 5000) this.unlockAchievement('millionaire');
         if (this.betAmount === 250) this.unlockAchievement('highRoller');
+        
+        if (this.balance <= 0) {
+            this.showToast('GAME OVER! Press RESET', 'loss');
+            document.getElementById('spinBtn').disabled = true;
+        }
+        
+        this.isSpinning = false;
+        spinBtn.classList.remove('loading');
     }
     
-    displayResult(result) {
-        const reels = ['reel1', 'reel2', 'reel3'];
-        reels.forEach((id, index) => {
-            const reel = document.getElementById(id);
-            reel.querySelector('.reel-inner').textContent = result[index];
-        });
+    updateReelSymbol(reelNum, symbol) {
+        const reel = document.getElementById(`reel${reelNum}`);
+        const container = reel.querySelector('.symbols-container');
+        const symbols = container.querySelectorAll('.symbol');
+        
+        // Center the winning symbol
+        const targetIndex = 2;
+        symbols[targetIndex].textContent = symbol;
+        
+        // Adjust positions
+        container.style.transform = `translateY(-${targetIndex * 200}px)`;
     }
     
     showWinEffect(win) {
-        const container = document.querySelector('.container');
-        container.classList.add('win-flash');
-        setTimeout(() => container.classList.remove('win-flash'), 500);
+        const winDisplay = document.getElementById('winDisplay');
+        const winAmount = winDisplay.querySelector('.win-amount');
+        winAmount.textContent = `+${win}`;
+        winDisplay.classList.add('show');
         
-        // Create floating numbers
-        for (let i = 0; i < 10; i++) {
-            const floatNum = document.createElement('div');
-            floatNum.textContent = `+${Math.floor(win/10)}`;
-            floatNum.style.position = 'fixed';
-            floatNum.style.left = Math.random() * window.innerWidth + 'px';
-            floatNum.style.top = window.innerHeight / 2 + 'px';
-            floatNum.style.color = '#00ff9d';
-            floatNum.style.fontSize = Math.random() * 20 + 20 + 'px';
-            floatNum.style.fontWeight = 'bold';
-            floatNum.style.pointerEvents = 'none';
-            floatNum.style.zIndex = '1000';
-            floatNum.style.animation = `floatUp ${Math.random() * 1 + 1}s ease-out forwards`;
-            document.body.appendChild(floatNum);
-            
-            setTimeout(() => floatNum.remove(), 1000);
+        // Create floating particles
+        for (let i = 0; i < 30; i++) {
+            this.createFloatingNumber(win);
         }
+        
+        setTimeout(() => {
+            winDisplay.classList.remove('show');
+        }, 1500);
     }
     
     showJackpotEffect() {
-        const container = document.querySelector('.slot-container');
-        container.classList.add('jackpot');
-        setTimeout(() => container.classList.remove('jackpot'), 500);
+        const winDisplay = document.getElementById('winDisplay');
+        winDisplay.querySelector('.win-amount').textContent = 'JACKPOT!';
+        winDisplay.classList.add('show');
         
-        // Create confetti effect
-        for (let i = 0; i < 50; i++) {
-            const confetti = document.createElement('div');
-            confetti.style.position = 'fixed';
-            confetti.style.left = Math.random() * window.innerWidth + 'px';
-            confetti.style.top = '-20px';
-            confetti.style.width = '10px';
-            confetti.style.height = '10px';
-            confetti.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
-            confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
-            confetti.style.animation = `confettiFall ${Math.random() * 2 + 2}s linear forwards`;
-            document.body.appendChild(confetti);
-            
-            setTimeout(() => confetti.remove(), 3000);
+        // Create confetti
+        for (let i = 0; i < 100; i++) {
+            this.createConfetti();
         }
+        
+        setTimeout(() => {
+            winDisplay.classList.remove('show');
+        }, 2000);
     }
     
-    updateStats() {
-        const winRate = this.totalSpins > 0 ? ((this.totalWins / this.totalSpins) * 100).toFixed(1) : 0;
-        const currentRTP = this.totalSpins > 0 ? 
-            ((this.balanceHistory[this.balanceHistory.length-1] - 1000 + (this.totalSpins * this.betAmount)) / (this.totalSpins * this.betAmount) * 100).toFixed(1) : 0;
+    createFloatingNumber(win) {
+        const el = document.createElement('div');
+        el.textContent = `+${Math.floor(win / 10)}`;
+        el.style.position = 'fixed';
+        el.style.left = Math.random() * window.innerWidth + 'px';
+        el.style.bottom = '200px';
+        el.style.color = '#00e5a0';
+        el.style.fontSize = Math.random() * 20 + 20 + 'px';
+        el.style.fontWeight = 'bold';
+        el.style.pointerEvents = 'none';
+        el.style.zIndex = '1000';
+        el.style.animation = 'floatUp 1s ease-out forwards';
+        document.body.appendChild(el);
         
-        document.getElementById('totalSpins').textContent = this.totalSpins;
-        document.getElementById('totalWins').textContent = this.totalWins;
-        document.getElementById('totalLosses').textContent = this.totalLosses;
-        document.getElementById('winRate').textContent = `${winRate}%`;
-        document.getElementById('bestStreak').textContent = this.bestStreak;
-        document.getElementById('currentRTP').textContent = `${currentRTP}%`;
+        setTimeout(() => el.remove(), 1000);
     }
     
-    unlockAchievement(achievementId) {
-        if (this.achievements.has(achievementId)) return;
+    createConfetti() {
+        const confetti = document.createElement('div');
+        confetti.style.position = 'fixed';
+        confetti.style.left = Math.random() * window.innerWidth + 'px';
+        confetti.style.top = '-20px';
+        confetti.style.width = '10px';
+        confetti.style.height = '10px';
+        confetti.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+        confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+        confetti.style.animation = `confettiFall ${Math.random() * 2 + 2}s linear forwards`;
+        document.body.appendChild(confetti);
         
-        this.achievements.add(achievementId);
-        const achievementElement = document.querySelector(`[data-achievement="${achievementId}"]`);
-        if (achievementElement) {
-            achievementElement.classList.remove('locked');
-            achievementElement.classList.add('unlocked');
-            this.showMessage(`🏆 ACHIEVEMENT SBLoccATO: ${achievementElement.querySelector('.achievement-name').textContent} 🏆`, 'win');
+        setTimeout(() => confetti.remove(), 3000);
+    }
+    
+    showToast(message, type) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'slideUp 0.3s ease-out reverse';
+            setTimeout(() => toast.remove(), 300);
+        }, 2500);
+    }
+    
+    unlockAchievement(id) {
+        if (this.achievements.has(id)) return;
+        
+        this.achievements.add(id);
+        const achievement = document.querySelector(`[data-achievement="${id}"]`);
+        if (achievement) {
+            achievement.classList.remove('locked');
+            achievement.classList.add('unlocked');
+            this.showToast(`🏆 ACHIEVEMENT UNLOCKED: ${achievement.querySelector('.achievement-name').textContent}`, 'achievement');
             this.playSound('win');
         }
     }
@@ -263,29 +304,29 @@ class NeoSlotSimulator {
                 datasets: [{
                     label: 'Bankroll',
                     data: [1000],
-                    borderColor: '#00ff9d',
-                    backgroundColor: 'rgba(0, 255, 157, 0.1)',
-                    borderWidth: 2,
+                    borderColor: '#ff3b6f',
+                    backgroundColor: 'rgba(255, 59, 111, 0.1)',
+                    borderWidth: 3,
                     fill: true,
-                    tension: 0.4
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: {
-                        labels: { color: 'white' }
-                    }
+                    legend: { labels: { color: '#8b92a8' } }
                 },
                 scales: {
                     y: {
-                        grid: { color: 'rgba(255,255,255,0.1)' },
-                        ticks: { color: 'white' }
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#8b92a8' }
                     },
                     x: {
-                        grid: { color: 'rgba(255,255,255,0.1)' },
-                        ticks: { color: 'white' }
+                        grid: { display: false },
+                        ticks: { color: '#8b92a8' }
                     }
                 }
             }
@@ -293,107 +334,27 @@ class NeoSlotSimulator {
     }
     
     updateChart() {
-        const labels = Array.from({length: this.balanceHistory.length}, (_, i) => i);
+        const labels = Array.from({ length: this.balanceHistory.length }, (_, i) => i);
         this.chart.data.labels = labels;
         this.chart.data.datasets[0].data = this.balanceHistory;
         this.chart.update();
     }
     
-    initParticles() {
-        setInterval(() => {
-            if (Math.random() > 0.7) {
-                this.createParticle();
-            }
-        }, 500);
-    }
-    
-    createParticle() {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.left = Math.random() * window.innerWidth + 'px';
-        particle.style.top = Math.random() * window.innerHeight + 'px';
-        document.getElementById('particles').appendChild(particle);
-        setTimeout(() => particle.remove(), 2000);
-    }
-    
-    createParticleExplosion() {
-        for (let i = 0; i < 20; i++) {
-            setTimeout(() => this.createParticle(), i * 50);
-        }
-    }
-    
-    loadSoundEffects() {
-        // Create Audio objects (using Web Audio API for beep sounds since external files aren't guaranteed)
-        this.sounds = {
-            spin: this.createBeepSound(440, 0.1),
-            win: this.createBeepSound(880, 0.2),
-            lose: this.createBeepSound(220, 0.3),
-            jackpot: this.createBeepSound(1760, 0.5)
-        };
-    }
-    
-    createBeepSound(frequency, duration) {
-        return () => {
-            if (!this.soundEnabled) return;
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.value = frequency;
-            gainNode.gain.value = 0.1;
-            
-            oscillator.start();
-            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + duration);
-            oscillator.stop(audioContext.currentTime + duration);
-            
-            setTimeout(() => audioContext.close(), duration * 1000);
-        };
-    }
-    
-    playSound(soundName) {
-        if (this.sounds[soundName]) {
-            this.sounds[soundName]();
-        }
-    }
-    
-    toggleSound() {
-        this.soundEnabled = !this.soundEnabled;
-        const btn = document.getElementById('soundToggle');
-        btn.textContent = this.soundEnabled ? '🔊 AUDIO ON' : '🔇 AUDIO OFF';
-        this.showMessage(this.soundEnabled ? '🔊 Audio attivato' : '🔇 Audio disattivato', 'info');
-    }
-    
-    toggleDarkMode() {
-        document.body.classList.toggle('dark-mode');
-        const btn = document.getElementById('darkModeBtn');
-        btn.textContent = document.body.classList.contains('dark-mode') ? '☀️ LIGHT MODE' : '🌙 DARK MODE';
-    }
-    
-    showMessage(msg, type) {
-        const messageDiv = document.getElementById('messageArea');
-        messageDiv.innerHTML = `<div class="message-content">${msg}</div>`;
+    updateStats() {
+        const winRate = this.totalSpins > 0 ? ((this.totalWins / this.totalSpins) * 100).toFixed(1) : 0;
+        const currentRTP = this.totalSpins > 0 ? 
+            ((this.balanceHistory[this.balanceHistory.length-1] - 1000 + (this.totalSpins * this.betAmount)) / (this.totalSpins * this.betAmount) * 100).toFixed(1) : 0;
         
-        const colors = {
-            win: '#00ff9d',
-            loss: '#ff006e',
-            error: '#ff006e',
-            info: '#00ff9d'
-        };
-        
-        messageDiv.querySelector('.message-content').style.borderLeftColor = colors[type] || '#00ff9d';
-        
-        setTimeout(() => {
-            if (messageDiv.innerHTML.includes(msg)) {
-                messageDiv.innerHTML = '<div class="message-content">🎮 Pronto a giocare?</div>';
-            }
-        }, 3000);
+        document.getElementById('totalSpins').textContent = this.totalSpins;
+        document.getElementById('winRate').textContent = `${winRate}%`;
+        document.getElementById('bestStreak').textContent = this.bestStreak;
+        document.getElementById('maxWin').textContent = this.maxWin;
+        document.getElementById('totalLosses').textContent = this.totalLosses;
+        document.getElementById('currentRTP').textContent = `${currentRTP}%`;
     }
     
     updateUI() {
-        document.getElementById('balance').textContent = Math.floor(this.balance);
+        document.getElementById('balance').textContent = Math.floor(this.balance).toLocaleString();
         if (this.balance <= 0) {
             document.getElementById('spinBtn').disabled = true;
         } else {
@@ -415,20 +376,63 @@ class NeoSlotSimulator {
         this.updateUI();
         this.updateChart();
         this.updateStats();
-        this.showMessage('🔄 Partita resettata! Buona fortuna!', 'win');
         document.getElementById('spinBtn').disabled = false;
-        document.getElementById('maxWin').textContent = '0';
         
-        // Reset achievements UI
-        document.querySelectorAll('.achievement').forEach(ach => {
+        document.querySelectorAll('.achievement-card').forEach(ach => {
             ach.classList.add('locked');
             ach.classList.remove('unlocked');
         });
         
-        const reels = ['reel1', 'reel2', 'reel3'];
-        reels.forEach(id => {
-            document.getElementById(id).querySelector('.reel-inner').textContent = '🍒';
+        [1, 2, 3].forEach(i => {
+            const reel = document.getElementById(`reel${i}`);
+            const container = reel.querySelector('.symbols-container');
+            container.style.transform = 'translateY(0)';
         });
+        
+        this.showToast('Game reset! Good luck!', 'win');
+    }
+    
+    loadSounds() {
+        this.sounds = {
+            spin: this.createBeep(440, 0.1),
+            win: this.createBeep(880, 0.2),
+            lose: this.createBeep(220, 0.3),
+            jackpot: this.createBeep(1760, 0.5)
+        };
+    }
+    
+    createBeep(freq, duration) {
+        return () => {
+            if (!this.soundEnabled) return;
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = freq;
+            gain.gain.value = 0.1;
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            osc.stop(audioCtx.currentTime + duration);
+            setTimeout(() => audioCtx.close(), duration * 1000);
+        };
+    }
+    
+    playSound(name) {
+        if (this.sounds[name]) this.sounds[name]();
+    }
+    
+    toggleSound() {
+        this.soundEnabled = !this.soundEnabled;
+        const btn = document.getElementById('soundToggle');
+        btn.querySelector('.sound-icon').textContent = this.soundEnabled ? '🔊' : '🔇';
+        this.showToast(this.soundEnabled ? 'Sound ON' : 'Sound OFF', 'info');
+    }
+    
+    toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        const btn = document.getElementById('themeToggle');
+        btn.querySelector('.theme-icon').textContent = document.body.classList.contains('dark-theme') ? '☀️' : '🌙';
     }
     
     delay(ms) {
@@ -440,28 +444,21 @@ class NeoSlotSimulator {
 const style = document.createElement('style');
 style.textContent = `
     @keyframes floatUp {
-        0% {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        100% {
-            transform: translateY(-100px);
-            opacity: 0;
-        }
+        0% { transform: translateY(0); opacity: 1; }
+        100% { transform: translateY(-200px); opacity: 0; }
     }
     
     @keyframes confettiFall {
-        0% {
-            transform: translateY(0) rotate(0deg);
-            opacity: 1;
-        }
-        100% {
-            transform: translateY(100vh) rotate(360deg);
-            opacity: 0;
-        }
+        0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+    }
+    
+    body.dark-theme {
+        --bg-dark: #0a0c12;
+        --bg-card: #0f1117;
     }
 `;
 document.head.appendChild(style);
 
 // Start the game
-new NeoSlotSimulator();
+new NeoSlot();
