@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>⚡ NEO SLOT - Futuristic Slot Simulator ⚡</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="cyber-grid"></div>
+    <div class="particles" id="particles"></div>
+    
+    <div class="container">
+        <div class="header">
+            <h1 class="glitch" data-text="NEO SLOT">NEO SLOT</h1>
+            <div class="dark-mode-toggle">
+                <button id="darkModeBtn" class="cyber-btn">🌙 DARK MODE</button>
+            </div>
+        </div>
+        
+        <div class="disclaimer">
+            ⚠️ SOLO SCOPO DIDATTICO - NESSUNA VINCITA REALE ⚠️
+        </div>
+
+        <!-- Dashboard Principale -->
+        <div class="dashboard">
+            <div class="stat-card">
+                <div class="stat-label">💰 CREDITI</div>
+                <div class="stat-value" id="balance">1000</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">🎰 RTP</div>
+                <div class="stat-value" id="rtpDisplay">96%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">🏆 MASSIMA VINCITA</div>
+                <div class="stat-value" id="maxWin">0</div>
+            </div>
+        </div>
+
+        <!-- Slot Machine -->
+        <div class="slot-container">
+            <div class="reels-container">
+                <div class="reel" id="reel1">
+                    <div class="reel-inner">🍒</div>
+                </div>
+                <div class="reel" id="reel2">
+                    <div class="reel-inner">🍒</div>
+                </div>
+                <div class="reel" id="reel3">
+                    <div class="reel-inner">🍒</div>
+                </div>
+            </div>
+            <div class="reel-glow"></div>
+        </div>
+
+        <!-- Controlli -->
+        <div class="controls-panel">
+            <div class="bet-control">
+                <label>🎲 PUNTATA</label>
+                <div class="bet-buttons">
+                    <button class="bet-btn" data-bet="10">10</button>
+                    <button class="bet-btn active" data-bet="50">50</button>
+                    <button class="bet-btn" data-bet="100">100</button>
+                    <button class="bet-btn" data-bet="250">250</button>
+                </div>
+            </div>
+            
+            <div class="difficulty-control">
+                <label>⚡ DIFFICOLTÀ (RTP)</label>
+                <input type="range" id="rtpSlider" min="70" max="98" value="96" step="1">
+                <div class="rtp-labels">
+                    <span>Difficile (70%)</span>
+                    <span>Normale (85%)</span>
+                    <span>Facile (98%)</span>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="spinBtn" class="spin-btn">
+                    <span class="btn-text">🎲 SPIN</span>
+                    <div class="btn-glow"></div>
+                </button>
+                <button id="resetBtn" class="reset-btn">🔄 RESET</button>
+            </div>
+
+            <div class="sound-toggle">
+                <button id="soundToggle" class="sound-btn">🔊 AUDIO ON</button>
+            </div>
+        </div>
+
+        <!-- Message Area -->
+        <div class="message-area" id="messageArea">
+            <div class="message-content">🎮 Pronto a giocare?</div>
+        </div>
+
+        <!-- Grafico Bankroll -->
+        <div class="chart-container">
+            <h3>📈 ANDAMENTO BANKROLL</h3>
+            <canvas id="bankrollChart"></canvas>
+        </div>
+
+        <!-- Achievement e Statistiche -->
+        <div class="stats-achievements">
+            <div class="stats-panel">
+                <h3>📊 STATISTICHE</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span>🎰 Spin totali:</span>
+                        <span id="totalSpins">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>🏆 Vincite:</span>
+                        <span id="totalWins">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>📉 Perdite:</span>
+                        <span id="totalLosses">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>💎 Win rate:</span>
+                        <span id="winRate">0%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>🔥 Miglior streak:</span>
+                        <span id="bestStreak">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>🎯 RTP attuale:</span>
+                        <span id="currentRTP">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="achievements-panel">
+                <h3>🏆 ACHIEVEMENT</h3>
+                <div class="achievements-grid" id="achievements">
+                    <div class="achievement locked" data-achievement="firstWin">
+                        <div class="achievement-icon">🎯</div>
+                        <div class="achievement-name">Prima Vittoria</div>
+                        <div class="achievement-desc">Vinci la prima partita</div>
+                    </div>
+                    <div class="achievement locked" data-achievement="jackpot">
+                        <div class="achievement-icon">💎</div>
+                        <div class="achievement-name">Jackpot!</div>
+                        <div class="achievement-desc">Vinci x50 o più</div>
+                    </div>
+                    <div class="achievement locked" data-achievement="highRoller">
+                        <div class="achievement-icon">🎲</div>
+                        <div class="achievement-name">High Roller</div>
+                        <div class="achievement-desc">Puntata da 250</div>
+                    </div>
+                    <div class="achievement locked" data-achievement="luckyStreak">
+                        <div class="achievement-icon">🔥</div>
+                        <div class="achievement-name">Fortunato</div>
+                        <div class="achievement-desc">3 vittorie consecutive</div>
+                    </div>
+                    <div class="achievement locked" data-achievement="grinder">
+                        <div class="achievement-icon">⚙️</div>
+                        <div class="achievement-name">Grinder</div>
+                        <div class="achievement-desc">100 spin totali</div>
+                    </div>
+                    <div class="achievement locked" data-achievement="millionaire">
+                        <div class="achievement-icon">💰</div>
+                        <div class="achievement-name">Milionario</div>
+                        <div class="achievement-desc">Raggiungi 5000 crediti</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
